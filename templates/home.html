@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Kayıt/Giriş</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
     <h2>Kayıt Ol</h2>
@@ -23,5 +25,24 @@
     {% if success %}
         <p style="color:green;">{{ success }}</p>
     {% endif %}
+    
+<!--  kanka buradan tetikleyince socketi kaydolan her kullanıcıyı direkt 
+  kaydolduğu anda ekliyor ama yeşil noktalarda sıkıntı oluyor belki en son bakarız
+
+    <script>
+        const socket = io();
+
+        socket.on("connect", () => {
+            console.log("Sunucuya bağlandı.");
+            socket.emit("users");
+        });
+
+        // Yeni kullanıcı kaydını dinle
+        socket.on('new_user', (data) => {
+            console.log(data.username + " kaydedildi.");
+            // Burada kullanıcıyı listeye ekleyebilirsiniz veya başka işlemler yapabilirsiniz
+        });
+    </script>
 </body>
 </html>
+-->

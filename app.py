@@ -14,7 +14,7 @@ active_users = {}
 room_active_users = {}  # Her odada hangi kullanıcıların aktif olduğunu takip eder.
 
 def generate_user_id():
-    """ 11 haneli rastgele bir tamsayı oluşturur """
+    """ 11 haneli rastgele bir tam sayı oluşturur """
     return str(random.randint(10000000000, 99999999999))
 
 @app.route("/", methods=["GET", "POST"])
@@ -64,6 +64,12 @@ def private_chat(target_user_id):
     messages = rooms[room_id]
     return render_template("private_chat.html", room_id=room_id, messages=messages, target_user=target_username)
 
+@socketio.on("users")
+def handle_request_users():
+        # Tüm kullanıcıları gönder
+       socketio.emit("users", users)
+
+
 @socketio.on("connect")
 def handle_connect():
     user_id = session.get("user_id")
@@ -71,7 +77,6 @@ def handle_connect():
     if user_id and username:
         active_users[user_id] = username
         socketio.emit("active_users", active_users)
-
         # Kullanıcı bağlandığında alıcı olduğu tüm mesajları "İletildi" olarak güncelle
         for room_id, messages in rooms.items():
             for message in messages:

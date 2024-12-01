@@ -19,21 +19,24 @@
 <body>
     <h2>Kullanıcılar</h2>
     <ul id="users-list">
+        <!-- Kullanıcılar dinamik olarak eklenecek -->
         {% for user_id, user_name in users.items() %}
-            <li id="user-{{ user_id }}">
-                <a href="{{ url_for('private_chat', target_user_id=user_id) }}">
-                    {{ user_name }}
-                    {% if user_id in active_users %}
-                        <span class="status-dot"></span>
-                    {% endif %}
-                </a>
-            </li>
+            {% if user_name != session['username'] %}
+                <li id="user-{{ user_id }}">
+                    <a href="{{ url_for('private_chat', target_user_id=user_id) }}">
+                        {{ user_name }}
+                        {% if user_id in active_users %}
+                            <span class="status-dot"></span>
+                        {% endif %}
+                    </a>
+                </li>
+            {% endif %}
         {% endfor %}
     </ul>
 
     <!-- Broadcast mesaj göndermek için TextBox ve Buton -->
     <form onsubmit="sendBroadcastMessage(); return false;">
-        <input type="text" id="broadcast-message" placeholder="Aktif kullanıcılara mesaj gönder" >
+        <input type="text" id="broadcast-message" placeholder="Aktif kullanıcılara mesaj gönder">
         <button type="submit">Gönder</button>
     </form>
     <p><a href="{{ url_for('home') }}">Çıkış Yap</a></p>
@@ -41,53 +44,79 @@
     <script>
         const socket = io();
 
+        // Sunucuya bağlanma
         socket.on("connect", () => {
             console.log("Sunucuya bağlandı.");
+            socket.emit("users");
         });
 
-        // Aktif kullanıcıları dinle ve listeyi güncelle
-        socket.on("active_users", (activeUsers) => {
-            const activeUsersList = $("#active-users");
-            activeUsersList.empty();  // Mevcut listeyi temizle
+        // Kullanıcılar listesini alma
+        let activeUsersList = [];
 
-            // Aktif kullanıcıları göster
-            for (const [userId, username] of Object.entries(activeUsers)) {
-                activeUsersList.append(`<li>${username}</li>`);
+        socket.on("users", function(users) {
+            const userList = document.getElementById("users-list");
+            userList.innerHTML = ''; // Listeyi temizle
 
-                // Eğer kullanıcılar listesinde yoksa, aktif kullanıcıyı ekle
-                const userItem = $(`#user-${userId}`);
-                if (!userItem.length && username !== "{{ session['username'] }}") {
-                    // Kullanıcıyı kullanıcılar listesine ekle
-                    const newUserItem = `<li id="user-${userId}">
-                        <a href="{{ url_for('private_chat', target_user_id=userId) }}">
-                            ${username} <span class="status-dot"></span>
-                        </a>
-                    </li>`;
-                    $("#users-list").append(newUserItem);
-                } else {
-                    // Kullanıcı zaten varsa, sadece aktif olduklarını göster
-                    userItem.find(".status-dot").show();
+            for (const [userId, user] of Object.entries(users)) {
+                if (user.username === "{{ session['username'] }}") continue; // Oturum açan kullanıcıyı hariç tut
+
+                const li = document.createElement("li");
+                li.id = "user-" + userId;
+
+                const a = document.createElement("a");
+                a.href = `/private_chat/${userId}`;
+                a.textContent = user.username;
+
+                // Aktif kullanıcıya yeşil nokta ekle
+                if (activeUsersList.includes(user.username)) {
+                    const dot = document.createElement("span");
+                    dot.classList.add("status-dot");
+                    a.appendChild(dot);
                 }
-            }
 
-            // Tüm kullanıcıları kontrol et ve aktif olmayanların yeşil noktasını kaldır
+                li.appendChild(a);
+                userList.appendChild(li);
+            }
+        });
+
+        // Aktif kullanıcıları dinleme ve listeyi güncelleme
+        socket.on("active_users", (activeUsers) => {
+            activeUsersList = Object.values(activeUsers); // Aktif kullanıcı listesini güncelle
+
+            // Aktif kullanıcılar listesini güncelle
+            const activeUsersListElement = document.getElementById("active-users");
+            activeUsersListElement.innerHTML = ''; // Listeyi temizle
+
+            activeUsersList.forEach((username) => {
+                const li = document.createElement("li");
+                li.textContent = username;
+                activeUsersListElement.appendChild(li);
+            });
+
+            // Kullanıcılar listesinde aktif olanlara yeşil nokta ekle ve aktif olmayanların noktasını kaldır
             $("#users-list li").each(function() {
                 const userId = $(this).attr("id").replace("user-", "");
-                if (!(userId in activeUsers)) {
-                    // Eğer kullanıcı aktif değilse, yeşil nokta kaldırılır
+                if (userId in activeUsers) {
+                    if (!$(this).find(".status-dot").length) {
+                        const dot = document.createElement("span");
+                        dot.classList.add("status-dot");
+                        $(this).find("a").append(dot);
+                    }
+                } else {
+                    // Aktif olmayan kullanıcıların yeşil noktasını kaldır
                     $(this).find(".status-dot").hide();
                 }
             });
         });
 
-        // Kullanıcılara mesaj gönderme fonksiyonu
+        // Mesaj gönderme
         function sendBroadcastMessage() {
-            const message = $("#broadcast-message").val();
+            const message = document.getElementById("broadcast-message").value;
             if (message) {
                 socket.emit("broadcast_message", { message: message });
-                $("#broadcast-message").val("");
+                document.getElementById("broadcast-message").value = '';
             }
         }
     </script>
 </body>
-</html> 
+</html>
