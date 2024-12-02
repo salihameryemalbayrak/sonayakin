@@ -96,13 +96,20 @@
         </div>
     `);
 });
-        socket.on("message_status_update", (data) => {
-            $("#chat .message").each(function () {
-                if ($(this).find(".timestamp").text() === `at ${data.timestamp}`) {
-                    $(this).find(".status").text(data.status);
-                }
-            });
-        });
+socket.on("message_status_update", (data) => {
+    $("#chat .message").each(function () {
+        const timestamp = $(this).find(".timestamp").text();
+        if (timestamp === `at ${data.timestamp}`) {
+            const currentStatus = $(this).find(".status").text();
+            
+            // Eğer mevcut durum "Görüldü" ise, durumu değiştirme
+            if (currentStatus !== "Görüldü") {
+                $(this).find(".status").text(data.status);
+            }
+        }
+    });
+});
+
 
         function sendMessage() {
             const message = $("#message").val();

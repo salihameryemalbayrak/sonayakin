@@ -152,10 +152,10 @@ def on_join():
 
     # Odadaki mesajları güncelleyerek "Görüldü" durumuna çekeriz
     for message in rooms[room_id]:
-        if message["receiver"] == user_id and message["status"] != "görüldü":
-                    message["status"] = "görüldü"
+        if message["receiver"] == user_id and message["status"] != "Görüldü":
+                    message["status"] = "Görüldü"
                     socketio.emit("message_status_update", message, room=room_id)
-
+                    
 @socketio.on("broadcast_message")
 def handle_broadcast_message(data):
     message_data = {
