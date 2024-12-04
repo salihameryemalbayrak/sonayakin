@@ -150,7 +150,7 @@ def on_join():
         room_active_users[room_id] = []
     room_active_users[room_id].append(user_id)
 
-    # Odadaki mesajları güncelleyerek "Görüldü" durumuna çekeriz
+    # Odadaki mesajları güncelleyerek "Görüldü" durumuna çekeriz asfsddas
     for message in rooms[room_id]:
         if message["receiver"] == user_id and message["status"] != "Görüldü":
                     message["status"] = "Görüldü"
