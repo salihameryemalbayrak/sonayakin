@@ -2,10 +2,8 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import join_room, leave_room, send, SocketIO, emit
 from datetime import datetime
 import random
-#saliha maini guncelledi
-
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "hjhjsdahhds"
+app.config["SECRET_KEY"] = "ayşo"
 socketio = SocketIO(app)
 
 users = {}  
@@ -14,7 +12,7 @@ active_users = {}
 room_active_users = {}  # Her odada hangi kullanıcıların aktif olduğunu takip eder.
 
 def generate_user_id():
-    """ 11 haneli rastgele bir tam sayı oluşturur """
+    """11 haneli rastgele bir tam sayı"""
     return str(random.randint(10000000000, 99999999999))
 
 @app.route("/", methods=["GET", "POST"])
@@ -167,16 +165,6 @@ def handle_broadcast_message(data):
         room_id = f"{min(session['user_id'], user_id)}-{max(session['user_id'], user_id)}"
         rooms.setdefault(room_id, []).append(message_data)
         socketio.emit("message", message_data, room=room_id)
-
-@app.route("/logout")
-def logout():
-    user_id = session.get("user_id")
-    if user_id:
-        session.pop("user_id", None)
-        session.pop("username", None)
-        active_users.pop(user_id, None)
-        socketio.emit("active_users", active_users)
-    return redirect(url_for("home"))        
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
