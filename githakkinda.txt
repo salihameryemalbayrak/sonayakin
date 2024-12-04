@@ -1,0 +1,14 @@
+
+aynı branchte guncelleme yapmak icin
+git checkout <branch-adi>
+git add .
+git commit -m "guncelleme"
+git push
+
+branchtekini maine ekleme ve guncelleme
+git add .
+git commit -m "guncelleme"
+git checkout main
+git merge <branch-adi>
+git push origin main
+

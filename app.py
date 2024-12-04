@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import join_room, leave_room, send, SocketIO, emit
 from datetime import datetime
 import random
-#saliha yeni branch olusturdum
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "hjhjsdahhds"
@@ -150,7 +149,7 @@ def on_join():
         room_active_users[room_id] = []
     room_active_users[room_id].append(user_id)
 
-    # Odadaki mesajları güncelleyerek "Görüldü" durumuna çekeriz asfsddas
+    # Odadaki mesajları güncelleyerek "Görüldü" durumuna çekeriz
     for message in rooms[room_id]:
         if message["receiver"] == user_id and message["status"] != "Görüldü":
                     message["status"] = "Görüldü"
@@ -167,16 +166,6 @@ def handle_broadcast_message(data):
         room_id = f"{min(session['user_id'], user_id)}-{max(session['user_id'], user_id)}"
         rooms.setdefault(room_id, []).append(message_data)
         socketio.emit("message", message_data, room=room_id)
-
-@app.route("/logout")
-def logout():
-    user_id = session.get("user_id")
-    if user_id:
-        session.pop("user_id", None)
-        session.pop("username", None)
-        active_users.pop(user_id, None)
-        socketio.emit("active_users", active_users)
-    return redirect(url_for("home"))        
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
