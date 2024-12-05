@@ -39,12 +39,17 @@
         <input type="text" id="broadcast-message" placeholder="Aktif kullanıcılara mesaj gönder">
         <button type="submit">Gönder</button>
     </form>
-    <p><a href="{{ url_for('home') }}">Çıkış Yap</a></p>
+    <p><a href="{{ url_for('logout') }}" onclick="logoutUser()">Çıkış Yap</a></p>
 
     <script>
         const socket = io();
 
-      
+        function logoutUser() {
+        socket.emit("logout"); // Socket üzerinden logout isteği gönder
+        //window.location.href = "{{ url_for('logout') }}"; // Çıkış işlemi için Flask yönlendirmesi
+    }
+
+        // Sunucuya bağlanma
         socket.on("connect", () => {
             console.log("Sunucuya bağlandı.");
             socket.emit("users");

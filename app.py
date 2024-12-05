@@ -86,9 +86,6 @@ def handle_connect():
 def handle_disconnect():
     user_id = session.get("user_id")
     room_id = session.get("room_id")
-    if user_id in active_users:
-        active_users.pop(user_id)
-        socketio.emit("active_users", active_users)
     if room_id and user_id in room_active_users.get(room_id, []):
         room_active_users[room_id].remove(user_id)
 
@@ -165,6 +162,16 @@ def handle_broadcast_message(data):
         room_id = f"{min(session['user_id'], user_id)}-{max(session['user_id'], user_id)}"
         rooms.setdefault(room_id, []).append(message_data)
         socketio.emit("message", message_data, room=room_id)
+
+@app.route("/logout")
+def logout():
+    user_id = session.get("user_id")
+    if user_id:
+        session.pop("user_id", None)
+        session.pop("username", None)
+        active_users.pop(user_id, None)
+        socketio.emit("active_users", active_users)
+    return redirect(url_for("home"))        
 
 if __name__ == "__main__":
     socketio.run(app, debug=True)
