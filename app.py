@@ -80,17 +80,19 @@ def handle_connect():
             for message in messages:
                 if message["receiver"] == user_id and message["status"] != "iletildi":      ##mesaj durumu güncellemesi alıcısına göre mesaj durumunu değiştiriyo
                     message["status"] = "İletildi"
-                    socketio.emit("message_status_update", message, room=room_id)
+                    socketio.emit("message_status_update", message, room=room_id)    
 
 @socketio.on("disconnect")
 def handle_disconnect():
     user_id = session.get("user_id")
     room_id = session.get("room_id")
     if room_id and user_id in room_active_users.get(room_id, []):
-        room_active_users[room_id].remove(user_id)
+        room_active_users[room_id].remove(user_id)   
+    print("Bağlantı kesildi")  
 
 @socketio.on("message")
 def handle_message(data):
+    print("mesaj burdan gonderilmeye calisiliyor")
     room_id = session.get("room_id")
     if not room_id:
         return
@@ -113,7 +115,7 @@ def handle_message(data):
         "receiver": target_user_id,  
         "message": data["message"],                                           ##mesaj burada veritabanına alınacak gönderici ve alıcı bilgisiyle beraber
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "status": "Gönderildi"
+        "status": "iletildi"
     }
 
      
@@ -154,9 +156,11 @@ def on_join():
 @socketio.on("broadcast_message")
 def handle_broadcast_message(data):
     message_data = {
-        "name": session["username"],                       ##toplu mesajların gönderimi yapılıyor veritabanına gönderilicek
-        "message": data["message"],
+        "name": session["username"],
+        "receiver":active_users,  
+        "message": data["message"],                                           ##mesaj burada veritabanına alınacak gönderici ve alıcı bilgisiyle beraber
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "status": "Gönderildi"
     }
     for user_id in active_users:
         room_id = f"{min(session['user_id'], user_id)}-{max(session['user_id'], user_id)}"
