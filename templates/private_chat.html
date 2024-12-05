@@ -61,7 +61,7 @@
     </style>
 </head>
 <body>
-    <div id="chat-container">
+    <div id="chat-container">             <!-- bu kısımda mesajların ekrana yazılması sessiondan değil veritabanından olacak-->
         <h2>{{ target_user }}</h2>
         <div id="chat">
             {% for message in messages %}
@@ -102,8 +102,8 @@ socket.on("message_status_update", (data) => {
         if (timestamp === `at ${data.timestamp}`) {
             const currentStatus = $(this).find(".status").text();
             
-            // Eğer mevcut durum "Görüldü" ise, durumu değiştirme
-            if (currentStatus !== "Görüldü") {
+           
+            if (currentStatus !== "Görüldü") {      
                 $(this).find(".status").text(data.status);
             }
         }

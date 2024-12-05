@@ -19,9 +19,9 @@
 <body>
     <h2>Kullanıcılar</h2>
     <ul id="users-list">
-        <!-- Kullanıcılar dinamik olarak eklenecek -->
+       
         {% for user_id, user_name in users.items() %}
-            {% if user_name != session['username'] %}
+            {% if user_name != session['username'] %}     <!-- Kullanıcılar sessiondan alınıyor fakat veritabanından alınıp yazılması gerek -->
                 <li id="user-{{ user_id }}">
                     <a href="{{ url_for('private_chat', target_user_id=user_id) }}">
                         {{ user_name }}
@@ -34,7 +34,7 @@
         {% endfor %}
     </ul>
 
-    <!-- Broadcast mesaj göndermek için TextBox ve Buton -->
+    
     <form onsubmit="sendBroadcastMessage(); return false;">
         <input type="text" id="broadcast-message" placeholder="Aktif kullanıcılara mesaj gönder">
         <button type="submit">Gönder</button>
@@ -44,21 +44,21 @@
     <script>
         const socket = io();
 
-        // Sunucuya bağlanma
+      
         socket.on("connect", () => {
             console.log("Sunucuya bağlandı.");
             socket.emit("users");
         });
 
-        // Kullanıcılar listesini alma
+        
         let activeUsersList = [];
 
         socket.on("users", function(users) {
             const userList = document.getElementById("users-list");
-            userList.innerHTML = ''; // Listeyi temizle
+            userList.innerHTML = ''; 
 
             for (const [userId, user] of Object.entries(users)) {
-                if (user.username === "{{ session['username'] }}") continue; // Oturum açan kullanıcıyı hariç tut
+                if (user.username === "{{ session['username'] }}") continue; // Oturum açan kullanıcıyı hariç tut veritabanındaki kullanıcıların hepsini tek tek gez
 
                 const li = document.createElement("li");
                 li.id = "user-" + userId;
@@ -67,7 +67,7 @@
                 a.href = `/private_chat/${userId}`;
                 a.textContent = user.username;
 
-                // Aktif kullanıcıya yeşil nokta ekle
+                
                 if (activeUsersList.includes(user.username)) {
                     const dot = document.createElement("span");
                     dot.classList.add("status-dot");
@@ -79,29 +79,29 @@
             }
         });
 
-        // Aktif kullanıcıları dinleme ve listeyi güncelleme
+        
         socket.on("active_users", (activeUsers) => {
-            activeUsersList = Object.values(activeUsers); // Aktif kullanıcı listesini güncelle
+            activeUsersList = Object.values(activeUsers); 
 
-            // Kullanıcılar listesinde aktif olanlara yeşil nokta ekle ve aktif olmayanların noktasını kaldır
+            
             $("#users-list li").each(function() {
                 const userId = $(this).attr("id").replace("user-", "");
-                const username = $(this).find("a").text().trim(); // Kullanıcı adını al
+                const username = $(this).find("a").text().trim(); 
 
-                if (activeUsersList.includes(username)) { // Liste üzerinden kontrol yap
+                if (activeUsersList.includes(username)) { 
                     if (!$(this).find(".status-dot").length) {
                         const dot = document.createElement("span");
                         dot.classList.add("status-dot");
                         $(this).find("a").append(dot);
                     }
                 } else {
-                    // Aktif olmayan kullanıcıların yeşil noktasını kaldır
+                   
                     $(this).find(".status-dot").hide();
                 }
             });
         });
 
-        // Mesaj gönderme
+      
         function sendBroadcastMessage() {
             const message = document.getElementById("broadcast-message").value;
             if (message) {
