@@ -9,7 +9,7 @@ socketio = SocketIO(app)
 users = {}  
 rooms = {}  
 active_users = {} 
-room_active_users = {} 
+room_active_users = {}  # Her odada hangi kullanıcıların aktif olduğunu takip eder.
 
 def generate_user_id():
     """11 haneli rastgele bir tam sayı"""
@@ -22,7 +22,7 @@ def home():
             username = request.form.get("username")
             if username in (user["username"] for user in users.values()):
                 return render_template("home.html", error="Bu kullanıcı adı zaten mevcut.")
-            user_id = generate_user_id()  
+            user_id = generate_user_id()  # UUID yerine 11 haneli integer
             users[user_id] = {"username": username}
             return render_template("home.html", success="Kayıt başarılı! Giriş yapabilirsiniz.")
 
@@ -64,7 +64,7 @@ def private_chat(target_user_id):
 
 @socketio.on("users")
 def handle_request_users():
-       
+        # Tüm kullanıcıları gönder
        socketio.emit("users", users)
 
 
@@ -75,24 +75,22 @@ def handle_connect():
     if user_id and username:
         active_users[user_id] = username
         socketio.emit("active_users", active_users)
-       
+        # Kullanıcı bağlandığında alıcı olduğu tüm mesajları "İletildi" olarak güncelle
         for room_id, messages in rooms.items():
             for message in messages:
-                if message["receiver"] == user_id and message["status"] != "iletildi":      ##mesaj durumu güncellemesi alıcısına göre mesaj durumunu değiştiriyo
+                if message["receiver"] == user_id and message["status"] != "iletildi":
                     message["status"] = "İletildi"
-                    socketio.emit("message_status_update", message, room=room_id)    
+                    socketio.emit("message_status_update", message, room=room_id)
 
 @socketio.on("disconnect")
 def handle_disconnect():
     user_id = session.get("user_id")
     room_id = session.get("room_id")
     if room_id and user_id in room_active_users.get(room_id, []):
-        room_active_users[room_id].remove(user_id)   
-    print("Bağlantı kesildi")  
+        room_active_users[room_id].remove(user_id)
 
 @socketio.on("message")
 def handle_message(data):
-    print("mesaj burdan gonderilmeye calisiliyor")
     room_id = session.get("room_id")
     if not room_id:
         return
@@ -109,27 +107,27 @@ def handle_message(data):
     else:
         target_user_id = user_ids[0]
 
-    
+    # Mesaj verisini oluştur ve alıcıyı ekle
     message_data = {
         "name": session["username"],
-        "receiver": target_user_id,  
-        "message": data["message"],                                           ##mesaj burada veritabanına alınacak gönderici ve alıcı bilgisiyle beraber
+        "receiver": target_user_id,  # Alıcı bilgisi
+        "message": data["message"],
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "status": "iletildi"
+        "status": "Gönderildi"
     }
 
-     
-    if target_user_id in active_users:                                           ##mesaj durumu iletildi yapılıyor
+    # Alıcı aktifse, mesaj durumu "İletildi" olmalı
+    if target_user_id in active_users:
         message_data["status"] = "İletildi"
     
-    
-    if target_user_id in room_active_users.get(room_id, []):              ##mesaj durumu görüldü yapılıyor veriabanına eklenecek 
+    # Alıcı odaya katılmışsa, mesaj durumu "Görüldü" olmalı
+    if target_user_id in room_active_users.get(room_id, []):
         message_data["status"] = "Görüldü"
 
-    
+    # Mesajı depola
     rooms[room_id].append(message_data)
 
-   
+    # Mesajı tüm oda üyelerine gönder
     send(message_data, to=room_id)
     emit("message_status_update", message_data, to=room_id)
 
@@ -142,25 +140,23 @@ def on_join():
         return
     join_room(room_id)
 
-    
+    # Kullanıcıyı aktif olarak oda listesine ekleyelim
     if room_id not in room_active_users:
         room_active_users[room_id] = []
     room_active_users[room_id].append(user_id)
 
-    
+    # Odadaki mesajları güncelleyerek "Görüldü" durumuna çekeriz
     for message in rooms[room_id]:
         if message["receiver"] == user_id and message["status"] != "Görüldü":
-                    message["status"] = "Görüldü"                                            ##mesaj durumu güncellenecek
+                    message["status"] = "Görüldü"
                     socketio.emit("message_status_update", message, room=room_id)
                     
 @socketio.on("broadcast_message")
 def handle_broadcast_message(data):
     message_data = {
         "name": session["username"],
-        "receiver":active_users,  
-        "message": data["message"],                                           ##mesaj burada veritabanına alınacak gönderici ve alıcı bilgisiyle beraber
+        "message": data["message"],
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "status": "Gönderildi"
     }
     for user_id in active_users:
         room_id = f"{min(session['user_id'], user_id)}-{max(session['user_id'], user_id)}"
